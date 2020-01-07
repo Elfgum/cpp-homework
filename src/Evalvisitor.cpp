@@ -139,11 +139,14 @@ class EvalVisitor : public Python3BaseVisitor
 
   antlrcpp::Any visitReturn_stmt(Python3Parser::Return_stmtContext *ctx){
     if(ctx->testlist()) {
-      std::vector<Data> ret=visit(ctx->testlist()).as<std::vector<Data>>();
+      auto ret=visit(ctx->testlist()).as<std::vector<Data>>();
+      if(ret[0].type==5) return ret;
       for(int i=0;i<ret.size();i++) ret[i]=ret[i].get_value();
       return ret;
     }
-    return Data("None",true);
+    std::vector<Data> ret;
+    ret.push_back(Data("None",true));
+    return ret;
   }
 
   antlrcpp::Any visitCompound_stmt(Python3Parser::Compound_stmtContext *ctx){
@@ -180,18 +183,20 @@ class EvalVisitor : public Python3BaseVisitor
       auto tmp=visit(ctx->stmt(i));
       if(tmp.is<int>())
         return (tmp.as<int>()==111?111:112);//111 for break; 112 for continue.
-      if(tmp.is<Data>()&&tmp.as<Data>().type==5) {
+      //if(tmp.is<Data>()&&tmp.as<Data>().type==5) {
         //std::vector<Data> ret00;
         //ret00.push_back(Data("None",true));
         //return ret00;
-        return Data("None",true);
-      }
+        //return Data("None",true);
+      //}
       if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>();
     }
     //std::vector<Data> ret00;
     //ret00.push_back(Data("None",true));
     //return ret00;
-    return Data(true);
+    Data _specialret(true);
+    _specialret.type=6;
+    return _specialret;
   }
 
   antlrcpp::Any visitTest(Python3Parser::TestContext *ctx) {
@@ -328,7 +333,10 @@ class EvalVisitor : public Python3BaseVisitor
         dict[dep+1][matchlist[i].name]=arg[j];
         dep++, i++, j++;
       }
-      std::vector<Data> ret=visit(fcont[func_call]).as<std::vector<Data>>();
+      std::vector<Data> ret;
+      auto atmp=visit(fcont[func_call]);
+      if(atmp.is<std::vector<Data>>())ret=atmp.as<std::vector<Data>>();
+        else ret.push_back(atmp.as<Data>());
       annih(dep--);
       return ret;
     }
@@ -388,7 +396,7 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitArgument(Python3Parser::ArgumentContext *ctx){
-    if (!ctx->NAME()) return visit(ctx->test());
+    if (!ctx->NAME()) return visit(ctx->test()).as<Data>().get_value();
     std::string valname=ctx->NAME()->toString();
     dict[dep+1][valname]=visit(ctx->test()).as<Data>();
     return Data(valname,true,true);
