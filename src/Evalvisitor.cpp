@@ -372,7 +372,7 @@ class EvalVisitor : public Python3BaseVisitor
       auto tmp=visit(ctx->test(i));
       if (tmp.is<std::vector<Data>>())
         for(int i=0;i<tmp.as<std::vector<Data>>().size();i++) ret.push_back(tmp.as<std::vector<Data>>()[i]);///return a,foo(b)
-      ret.push_back( tmp.as<Data>() );
+      else ret.push_back( tmp.as<Data>() );
       }
     return ret;
   }//返回 vector<Data>
@@ -383,7 +383,7 @@ class EvalVisitor : public Python3BaseVisitor
       auto tmp=visit(argus);
       if(tmp.is<std::vector<Data>>()) 
         for(int i=0;i<tmp.as<std::vector<Data>>().size();i++) ret.push_back(tmp.as<std::vector<Data>>()[i]);//print(a,foo(b),c)
-      ret.push_back(tmp.as<Data>());
+      else ret.push_back(tmp.as<Data>());
     }
     return ret;
   }
