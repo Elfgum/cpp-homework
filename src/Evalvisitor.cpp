@@ -407,8 +407,9 @@ class EvalVisitor : public Python3BaseVisitor
         while (i<matchlist.size()&&dict[dep].count(matchlist[i].name) ) i++;//{std::cout<<"while_judge worked once."<<std::endl;i++;}
         if(i>=matchlist.size()) break;
         //std::cout<<"break avoided."<<std::endl;
-        dict[dep][matchlist[i].name]=arg[j].get_value();
-        i++, j++;
+        dep--;
+        dict[dep+1][matchlist[i].name]=arg[j].get_value();
+        dep++, i++, j++;
       }
       //std::cout<<"matchlist worked."<<std::endl;
       //for (auto jj:matchlist) std::cout<<jj.name<<'='<<jj<<std::endl;
