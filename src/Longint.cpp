@@ -216,8 +216,9 @@ Longint operator/(const Longint &l1,const Longint &l2){
     int La=l1.number.size(),Lb=l2.number.size(),i,tp=La;   //a，b是整形数组表示被除数，除数，tp保存被除数的长度
     int r[La+Lb+2]={0};
     if(La<Lb || (La==Lb && l1.number<l2.number)) {
-        value.number="0";
-        value.symbol=positive;
+        
+        value.number=(value.symbol==negative?"1":"0");
+        value.symbol=(value.symbol==negative?negative:positive);
         return value;
     }
     int t=La-Lb;   //被除数和除数的位数之差
