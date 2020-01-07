@@ -384,7 +384,7 @@ class EvalVisitor : public Python3BaseVisitor
       //std::cout<<"print called"<<std::endl;
       
       std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
-      for (int i=0; i<arg.size()-1; i++) std::cout<<arg[i]<<' ';
+      for (int i=0; i+1<arg.size(); i++) std::cout<<arg[i]<<' ';
       if (arg.size()) std::cout<<arg[arg.size()-1];
       std::cout<<std::endl;
       annih(dep+1);
