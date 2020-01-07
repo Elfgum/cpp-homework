@@ -19,8 +19,9 @@ bool Data::isname() {return !type;}
   Data::Data():type(5){};
 //type_类型转换函数
   Data Data::__longint()const{
-    Longint L(0);
-    Data ret(L);
+    Longint L1,L2;
+    L1="0",L2="1";
+    Data ret(L1);
     switch (type)
     {
       case 1: return *this;
@@ -31,7 +32,7 @@ bool Data::isname() {return !type;}
         break;
       }
       case 3: ret.num=s; break;
-      case 4: ret.num=b;
+      case 4: ret.num=(b?L2:L1);
     }
     return ret;
   }
@@ -121,7 +122,7 @@ bool Data::isname() {return !type;}
       int times=int(tmp);
       if (times<1) return Data("");
       std::string ret="";
-      for(register int i=0;i<times;i++) ret+=s;
+      for(int i=0;i<times;i++) ret+=s;
       return Data(ret);
     }
     if(other.type==3){
@@ -129,7 +130,7 @@ bool Data::isname() {return !type;}
       int times=int(tmp);
       if (times<1) return Data("");
       std::string ret="";
-      for(register int i=0;i<times;i++) ret+=other.s;
+      for(int i=0;i<times;i++) ret+=other.s;
       return Data(ret);
     }
     if(type==2||other.type==2){
@@ -152,10 +153,10 @@ bool Data::isname() {return !type;}
     return Data(retd);
   }
   Data Data::div(const Data &other)const{ //整除 返回值type=1
-    return Data(num/other.num); 
+    return Data(this->__longint().num/other.__longint().num); 
   }//整除仅大整数可用
   Data Data::operator%(const Data &other)const{ //取余 返回值type=1
-    return Data(num%other.num);
+    return Data(this->__longint().num%other.__longint().num);
   }
   Data Data::operator-()const{
     Data ret=*this;
