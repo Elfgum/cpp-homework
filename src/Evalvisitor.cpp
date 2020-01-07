@@ -162,7 +162,8 @@ class EvalVisitor : public Python3BaseVisitor
       for(int i=0;i<ret.size();i++) ret[i]=ret[i].get_value();
       return ret;
     }
-    return Data("None",true);
+    std::vector<Data> _ret;
+    return _ret;
   }
 
   antlrcpp::Any visitCompound_stmt(Python3Parser::Compound_stmtContext *ctx){
