@@ -437,8 +437,15 @@ class EvalVisitor : public Python3BaseVisitor
       //std::cout<<"atom:number reached."<<std::endl;
       Data ret(ctx->NUMBER()->toString());
       //std::cout<<"atom:number step1 ended."<<std::endl;
-      if(ret.s.find('.')!=std::string::npos) return ret.__double();
-        else return ret.__longint();
+      if(ret.s.find('.')!=std::string::npos) {
+        ret.type=2;
+        sscanf(ret.s.c_str(),"%lf",&ret.d);
+      }
+      else{
+        ret.type=1;
+        ret.num=ret.s;
+      }
+      return ret;
     }
     if(ctx->STRING().size()) {
       Data ret("");
