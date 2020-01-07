@@ -184,7 +184,7 @@ class EvalVisitor : public Python3BaseVisitor
       //if(tmp1.is<std::vector<Data>>()){ 
       //  if(!bool(tmp1.as<std::vector<Data>>()[0])) return Data(true);
       //}else if(!bool(tmp1.as<Data>())) return Data(true);
-      if(bool(get_first_value(visit(ctx->test())))) return Data(true);
+      if(!bool(get_first_value(visit(ctx->test())))) return Data(true);
       antlrcpp::Any tmp2=visit(ctx->suite());
       if (tmp2.is<int>()&&tmp2.as<int>()==111) return Data(true);
     }
