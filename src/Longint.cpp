@@ -222,14 +222,15 @@ Longint operator/(const Longint &l1,const Longint &l2){
     }
     int t=La-Lb;   //被除数和除数的位数之差
     b.number.append(t,'0');
+    Longint temp;
     for(int j=0;j<=t;j++) {
-        Longint temp;
         while((temp=a-b).symbol==positive||(temp=a-b).number=="0") {  //如果被除数比除数大继续减
             a=temp;
             r[t-j]++;
         }
         if(a.number!="0") a.number+="0";
     }
+    if(value.symbol==negative&&a.number!="0") r[0]++;
     for(i=0;i<La+Lb;i++) r[i+1]+=r[i]/10,r[i]%=10;    //统一处理进位
     while(!r[i]) i--;    //将整形数组表示的商转化成字符串表示的
     while(i>=0) s+=char(r[i--]+'0');
