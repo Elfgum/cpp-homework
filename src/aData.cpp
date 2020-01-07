@@ -55,6 +55,7 @@ bool Data::isname() {return !type;}
       case 1: {
         if (num.symbol==negative) ret.s="-";
         ret.s=ret.s+num.number;
+        break;
       }
       case 2: ret.s=std::to_string(d); break;
       case 3: return *this;
