@@ -219,20 +219,20 @@ class EvalVisitor : public Python3BaseVisitor
   antlrcpp::Any visitOr_test(Python3Parser::Or_testContext *ctx){
     if(!ctx->OR().size()) return visit(ctx->and_test()[0]);
     for(int i=0; i<ctx->and_test().size(); i++) 
-      if (bool( visit(ctx->and_test(i)).as<Data>() )) return Data(true);
+      if (bool( get_first_value(visit(ctx->and_test(i))) )) return Data(true);
     return Data(false);
   }
 
   antlrcpp::Any visitAnd_test(Python3Parser::And_testContext *ctx){
     if(!ctx->AND().size()) return visit(ctx->not_test()[0]);
     for(int i=0; i<ctx->not_test().size(); i++)
-      if (! bool( visit(ctx->not_test(i)).as<Data>() )) return Data(false);
+      if (! bool( get_first_value(visit(ctx->not_test(i))) )) return Data(false);
     return Data(true);
   }
 
   antlrcpp::Any visitNot_test(Python3Parser::Not_testContext *ctx){
     if(ctx->comparison()) return visit(ctx->comparison());
-    Data res=visit(ctx->not_test()).as<Data>();
+    Data res=get_first_value(visit(ctx->not_test()));
     res=(bool(res)? Data(false):Data(true));
     return res;
   }
