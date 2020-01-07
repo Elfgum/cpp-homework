@@ -162,7 +162,7 @@ class EvalVisitor : public Python3BaseVisitor
       for(int i=0;i<ret.size();i++) ret[i]=ret[i].get_value();
       return ret;
     }
-    std::vector<Data>> ret0;
+    std::vector<<Data>> ret0;
     ret0.push_back(Data("None",true));
     return ret0;
   }
@@ -219,7 +219,7 @@ class EvalVisitor : public Python3BaseVisitor
       //std::cout<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<' '<<dict[dep]["c"]<<std::endl;
       if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>();
     }
-    std::vector<Data>> ret0;
+    std::vector<<Data>> ret0;
     ret0.push_back(Data("None",true));
     return ret0;
   }
