@@ -195,62 +195,38 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitTest(Python3Parser::TestContext *ctx) {
-    
-    //std::cout<<"test visited."<<std::endl;
     return visit(ctx->or_test());
   }
 
   antlrcpp::Any visitOr_test(Python3Parser::Or_testContext *ctx){
-    
-    //std::cout<<"ortest reached."<<std::endl;
     if(!ctx->OR().size()) return visit(ctx->and_test()[0]);
-    //std::cout<<"ortest way1 passed."<<std::endl;
-    for(int i=0; i<ctx->and_test().size(); i++) {
-      Data tmp=visit(ctx->and_test()[i]).as<Data>();
-      if (bool(tmp)) return Data(true);
-    }
+    for(int i=0; i<ctx->and_test().size(); i++) 
+      if (bool( visit(ctx->and_test(i)).as<Data>() )) return Data(true);
     return Data(false);
   }
 
   antlrcpp::Any visitAnd_test(Python3Parser::And_testContext *ctx){
-    //std::cout<<"andtest reached."<<std::endl;
     if(!ctx->AND().size()) return visit(ctx->not_test()[0]);
-    //std::cout<<"andtest way1 passed."<<std::endl;
-    for(int i=0; i<ctx->not_test().size(); i++){
-      Data tmp=visit(ctx->not_test()[i]).as<Data>();
-      if (! bool(tmp)) return Data(false);
-    }
+    for(int i=0; i<ctx->not_test().size(); i++)
+      if (! bool( visit(ctx->not_test(i)).as<Data>() )) return Data(false);
     return Data(true);
   }
 
   antlrcpp::Any visitNot_test(Python3Parser::Not_testContext *ctx){
-    //std::cout<<"nottest reached."<<std::endl;
     if(ctx->comparison()) return visit(ctx->comparison());
-    //std::cout<<"nottest way1 passed."<<std::endl;
     Data res=visit(ctx->not_test()).as<Data>();
     res=(bool(res)? Data(false):Data(true));
     return res;
   }
 
   antlrcpp::Any visitComparison(Python3Parser::ComparisonContext *ctx){
-    
-    //std::cout<<"comparison reached."<<std::endl;
-    if(!ctx->comp_op().size()) return visit(ctx->arith_expr()[0]);
-    
-    //std::cout<<"comparison way1 passed."<<std::endl;
-    Data lef=visit(ctx->arith_expr()[0]).as<Data>();
-    //std::cout<<"comparison_lef="<<lef<<std::endl;
-    if(!lef.type) lef=fetch(lef.name);
+    if(!ctx->comp_op().size()) return visit(ctx->arith_expr(0));
+    Data lef=visit(ctx->arith_expr(0)).as<Data>().get_value();
     for(int i=0;i<ctx->comp_op().size();i++){
-      Data rig=visit(ctx->arith_expr()[i+1]).as<Data>();
-      //std::cout<<"comparison_rig="<<rig<<std::endl;
-      if(rig.isname()) rig=fetch(rig.name);
-      //std::cout<<"comparison_comp_op:"<<visit(ctx->comp_op()[i]).as<int>()<<std::endl;
-      if(! ((lef.*( func_comp_op [visit(ctx->comp_op()[i]).as<int>()] )) (rig)) ) return Data(false);
+      Data rig=visit(ctx->arith_expr(i+1)).as<Data>().get_value();
+      if(! ((lef.*( func_comp_op [visit(ctx->comp_op(i)).as<int>()] )) (rig)) ) return Data(false);
       lef=rig;
-      
     }
-    //std::cout<<"comparison_return true"<<std::endl;
     return Data(true);
   }
 
@@ -264,38 +240,19 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitArith_expr(Python3Parser::Arith_exprContext *ctx){
-    
-    //std::cout<<"arith_expr reached."<<std::endl;
-    if (ctx->term().size()==1) return visit(ctx->term()[0]);
-    
-    //std::cout<<"arith_expr way1 passed."<<std::endl;
+    if (ctx->term().size()==1) return visit(ctx->term(0));
     std::vector<std::pair<int,int>>order;//index,type; 1 for +, 2 for -
-    order.clear();
-    //std::cout<<"arith_expr +- 0 passed."<<std::endl;
     for(int i=0;i<ctx->ADD().size();i++) order.push_back(std::make_pair(ctx->ADD()[i]->getSymbol()->getTokenIndex(),1) );
     for(int i=0;i<ctx->MINUS().size();i++) order.push_back(std::make_pair(ctx->MINUS()[i]->getSymbol()->getTokenIndex(),2) );
-    
-    //std::cout<<"arith_expr +- 1 operated."<<std::endl;
     std::sort(order.begin(),order.end());
-    
-    //std::cout<<"arith_expr +- 2 operated."<<std::endl;
-    Data lef=visit(ctx->term()[0]).as<Data>(), rig(false);
-    
-    //std::cout<<"arith_expr +- 3 operated."<<std::endl;
-    
-    if(lef.isname()) lef=fetch(lef.name);
-    
+    Data lef=visit(ctx->term(0)).as<Data>().get_value(), rig(false);
     for (int i=0;i<order.size();i++){
-      rig=visit(ctx->term()[i+1]).as<Data>();
-      if(rig.isname()) rig=fetch(rig.name);
-      
+      auto atemp=visit(ctx->term(i+1));
+      if (atemp.is<std::vector<Data>>()) rig=atemp.as<std::vector<Data>>()[0].get_value();
+        else rig=atemp.as<Data>().get_value();
       if(order[i].second==2) lef-=rig;
         else lef+=rig;
-        
-      //std::cout<<"i="<<i<<"  "<<lef<<std::endl;
     }
-   // std::cout<<"arith_expr +- all operated."<<std::endl;
-    //std::cout<<lef<<std::endl;
     return lef;
   }
 
