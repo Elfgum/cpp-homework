@@ -8,5 +8,7 @@
 
 Data fetch(std::string name);
 void annih(int depth);
+Data get_first(antlrcpp::Any tmp);
+Data get_first_value(antlrcpp::Any tmp);
 
 #endif //PYTHON_INTERPRETER_EVALVISITOR_H
