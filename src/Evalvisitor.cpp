@@ -155,8 +155,9 @@ class EvalVisitor : public Python3BaseVisitor
   antlrcpp::Any visitIf_stmt(Python3Parser::If_stmtContext *ctx){
     for (int i=0; i<ctx->test().size(); i++){
       auto tmp=visit(ctx->test(i));
-      if(tmp.is<std::vector<Data>>()) tmp=tmp.as<std::vector<Data>>();
-      if(bool(tmp.as<Data>())) return visit(ctx->suite(i));
+      if(tmp.is<std::vector<Data>>()) {
+        if (bool(tmp.as<std::vector<Data>>()[0])) return visit(ctx->suite(i));
+      }else if(bool(tmp.as<Data>())) return visit(ctx->suite(i));
     }
     if (ctx->ELSE()) return visit(ctx->suite(ctx->suite().size()-1));
     return Data(false);
@@ -165,8 +166,9 @@ class EvalVisitor : public Python3BaseVisitor
   antlrcpp::Any visitWhile_stmt(Python3Parser::While_stmtContext *ctx){
     while (1) {
       antlrcpp::Any tmp1=visit(ctx->test());
-      if(tmp1.is<std::vector<Data>>()) tmp1=tmp1.as<std::vector<Data>>();
-      if(!bool(tmp1.as<Data>())) break;
+      if(tmp1.is<std::vector<Data>>()){ 
+        if(!bool(tmp1.as<std::vector<Data>>()[0]))break;
+      }else if(!bool(tmp1.as<Data>())) break;
       antlrcpp::Any tmp2=visit(ctx->suite());
       if (tmp2.is<int>()&&tmp2.as<int>()==111) return Data(true);
     }
