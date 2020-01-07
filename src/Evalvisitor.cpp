@@ -257,9 +257,7 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitTerm(Python3Parser::TermContext *ctx){
-    //std::cout<<"term reached."<<std::endl;
     if(ctx->factor().size()==1) return visit(ctx->factor()[0]);
-    //std::cout<<"term way1 passed."<<std::endl;
     std::vector<std::pair<int,int>>order;//<index,type>; 1 for *, 2 for /, 3 for //, 4 for %
     order.clear();
     for(int i=0;i<ctx->STAR().size();i++) order.push_back(std::make_pair(ctx->STAR()[i]->getSymbol()->getTokenIndex(),1) );
@@ -272,10 +270,7 @@ class EvalVisitor : public Python3BaseVisitor
     if(tmp.is<Data>()) lef=tmp.as<Data>();
     if(tmp.is<std::vector<Data>>()) lef=tmp.as<std::vector<Data>>()[0];
     if(lef.isname()) lef=fetch(lef.name);
-    //std::cout<<"term_lef="<<lef<<std::endl;
     for(int i=0;i<order.size();i++){
-
-    //std::cout<<"term_rig="<<rig<<std::endl;
       auto tmp1=visit(ctx->factor()[i+1]);
       if(tmp1.is<Data>()) rig=tmp1.as<Data>();
       if(tmp1.is<std::vector<Data>>()) rig=tmp1.as<std::vector<Data>>()[0];
@@ -291,77 +286,49 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitFactor(Python3Parser::FactorContext *ctx){
-    
-    //std::cout<<"factor reached."<<std::endl;
     if(!ctx->atom_expr()) {
       auto tmp=visit(ctx->factor());
       Data ret("None",true);
       if(tmp.is<Data>()) ret=tmp.as<Data>();
       if(tmp.is<std::vector<Data>>()) ret=tmp.as<std::vector<Data>>()[0];
       if(ret.isname()) ret=fetch(ret.name);
-      if(ctx->ADD()) return ret;///wt
-      if(ctx->MINUS()) return -ret;///wt
+      if(ctx->ADD()) return ret;
+      if(ctx->MINUS()) return -ret;
     }
     return visit(ctx->atom_expr());
   }
 
   antlrcpp::Any visitAtom_expr(Python3Parser::Atom_exprContext *ctx){
-    //std::cout<<"atom_expr reached."<<std::endl;
     if(!ctx->trailer()) return visit(ctx->atom());
-    //std::cout<<"atom_expr way1 passed."<<std::endl;
     std::string func_call=ctx->atom()->NAME()->toString();
-    //std::cout<<"NAME()->toString() :"<<ctx->atom()->NAME()->toString()<<std::endl;
     for(int i=0; i<4; i++) 
       if (func_call==built_in_func[i]) {
         
         std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
-        //std::cout<<"func_call:"<<func_call<<std::endl;
         Data data=arg[0].get_value();
         annih(dep+1);
         return (data.*(func_conv[i]))();
       }
     if(func_call=="print"){ //  "print"   print()是允许的
-      //std::cout<<"print called"<<std::endl;
-      
       std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
-      //std::cout<<"arg set up."<<std::endl;
-      //std::cout<<"arg.size()-1="<<arg.size()-1<<std::endl;
       for (int i=0; i+1<arg.size(); i++) std::cout<<arg[i]<<' ';
-      //std::cout<<"arg[0,size-2] put."<<std::endl;
       if (arg.size()) {
         std::cout<<arg[arg.size()-1];}
-      //std::cout<<"arg[size-1] put."<<std::endl;
       std::cout<<std::endl;
       annih(dep+1);
-      //std::cout<<"annih executed."<<std::endl;
       return Data(true);
     }
     if(fpara.count(func_call)){
-      //std::cout<<"func_call:"<<func_call<<std::endl;
       std::vector<Data> matchlist=visit(fpara[func_call]).as<std::vector<Data>>();
-      //std::cout<<"matchlist set up. size="<<matchlist.size()<<std::endl;
-      
-      //std::cout<<"666:  "<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<std::endl;
       std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
-      //std::cout<<"arg set up. size="<<arg.size()<<std::endl;
       int i=0,j=0; dep++;
-      //for (auto jj:matchlist) std::cout<<"matchlist "<<jj.name<<' ';
-      
-      //std::cout<<std::endl;
-      //for (auto jj:arg) std::cout<<"arg type "<<jj.type<<' ';
-      //std::cout<<std::endl;
       while(i<matchlist.size()){
-        //std::cout<<"i="<<i<<std::endl;
-        while (i<matchlist.size()&&dict[dep].count(matchlist[i].name) ) i++;//{std::cout<<"while_judge worked once."<<std::endl;i++;}
+        while (i<matchlist.size()&&dict[dep].count(matchlist[i].name) ) i++;
         if(i>=matchlist.size()) break;
-        //std::cout<<"break avoided."<<std::endl;
         dep--;
         dict[dep+1][matchlist[i].name]=arg[j].get_value();
         dep++, i++, j++;
       }
-      //std::cout<<"matchlist worked."<<std::endl;
-      //for (auto jj:matchlist) std::cout<<jj.name<<'='<<jj<<std::endl;
-      //std::cout<<"666:  "<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<std::endl;
       std::vector<Data> ret=visit(fcont[func_call]).as<std::vector<Data>>();
       annih(dep--);
       return ret;
@@ -369,24 +336,18 @@ class EvalVisitor : public Python3BaseVisitor
   }//内置函数已写好
 
   antlrcpp::Any visitTrailer(Python3Parser::TrailerContext *ctx){
-   // std::cout<<"trailer reached."<<std::endl;
     if(ctx->arglist()) return visit(ctx->arglist());
     std::vector<Data> ret;//无参数
     return ret;
   }//返回 vector<Data>
 
   antlrcpp::Any visitAtom(Python3Parser::AtomContext *ctx){
-    
-    //std::cout<<"atom reached."<<std::endl;
     if(ctx->NONE()) return Data("NONE",true);
-    //std::cout<<"None passed."<<std::endl;
     if(ctx->TRUE()) return Data(true);
     if(ctx->FALSE()) return Data(false);
     if(ctx->NAME()) return Data(ctx->NAME()->toString(),true,true);
     if(ctx->NUMBER()) {
-      //std::cout<<"atom:number reached."<<std::endl;
       Data ret(ctx->NUMBER()->toString());
-      //std::cout<<"atom:number step1 ended."<<std::endl;
       if(ret.s.find('.')!=std::string::npos) {
         ret.type=2;
         sscanf(ret.s.c_str(),"%lf",&ret.d);
@@ -406,36 +367,30 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitTestlist(Python3Parser::TestlistContext *ctx){
-    //std::cout<<"testlist reached."<<std::endl;
     std::vector<Data> ret;
     for (int i=0; i<ctx->test().size(); i++) {
       auto tmp=visit(ctx->test(i));
-      if (tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>();
+      if (tmp.is<std::vector<Data>>())
+        for(int i=0;i<tmp.as<std::vector<Data>>().size();i++) ret.push_back(tmp.as<std::vector<Data>>()[i]);///return a,foo(b)
       ret.push_back( tmp.as<Data>() );
       }
-    
-    //std::cout<<"test size="<<ctx->test().size()<<" testlist set up."<<std::endl;
     return ret;
   }//返回 vector<Data>
 
   antlrcpp::Any visitArglist(Python3Parser::ArglistContext *ctx){
-    //std::cout<<"arglist reached."<<std::endl;
     std::vector<Data> ret;
     for (auto argus:ctx->argument()) {
       auto tmp=visit(argus);
-      if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>();
+      if(tmp.is<std::vector<Data>>()) 
+        for(int i=0;i<tmp.as<std::vector<Data>>().size();i++) ret.push_back(tmp.as<std::vector<Data>>()[i]);//print(a,foo(b),c)
       ret.push_back(tmp.as<Data>());
     }
     return ret;
   }
 
   antlrcpp::Any visitArgument(Python3Parser::ArgumentContext *ctx){
-    
-    //std::cout<<"argument reached."<<std::endl;
     if (!ctx->NAME()) return visit(ctx->test());
-    //std::cout<<"argument IS NAME()"<<std::endl;
     std::string valname=ctx->NAME()->toString();
-    //std::cout<<"argument valname IS "<<valname<<std::endl;
     dict[dep+1][valname]=visit(ctx->test()).as<Data>();
     return Data(valname,true,true);
   }
