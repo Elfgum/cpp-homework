@@ -322,11 +322,10 @@ class EvalVisitor : public Python3BaseVisitor
       std::vector<Data> matchlist=visit(fpara[func_call]).as<std::vector<Data>>();
       std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
       int i=0,j=0; dep++;
-      while(i<matchlist.size()){
-        while (i<matchlist.size()&&dict[dep].count(matchlist[i].name) ) i++;
-        if(i>=matchlist.size()) break;
+      while(j<arg.size()){
+        if(arg[j].isname()) break;
         dep--;
-        dict[dep+1][matchlist[i].name]=arg[j].get_value();
+        dict[dep+1][matchlist[i].name]=arg[j];
         dep++, i++, j++;
       }
       std::vector<Data> ret=visit(fcont[func_call]).as<std::vector<Data>>();
