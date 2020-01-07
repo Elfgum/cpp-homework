@@ -1,4 +1,5 @@
 #include "Evalvisitor.h"
+#include <iomanip>
 
 using std::map;
 map<std::string, Data>dict[2002];
@@ -34,7 +35,7 @@ std::ostream& operator<<(std::ostream& os,Data data){
   if (!data.type) data=fetch(data.name);
   switch (data.type){
     case 1: os<<data.num; break;
-    case 2: printf("%.6f",data.d); break;
+    case 2: printf("%.6f",data.d);break;
     case 3: os<<data.s; break;
     case 4: os<<(data.b?"True":"False"); break;
     case 5: os<<"None"; 
@@ -335,13 +336,18 @@ class EvalVisitor : public Python3BaseVisitor
     for(int i=0;i<ctx->IDIV().size();i++) order.push_back(std::make_pair(ctx->IDIV()[i]->getSymbol()->getTokenIndex(),3) );
     for(int i=0;i<ctx->MOD().size();i++) order.push_back(std::make_pair(ctx->MOD()[i]->getSymbol()->getTokenIndex(),4) );
     std::sort(order.begin(),order.end());
-    Data lef=visit(ctx->factor()[0]).as<Data>(), rig(false);
+    auto tmp=visit(ctx->factor()[0]);
+    Data lef(false),rig(false);
+    if(tmp.is<Data>()) lef=tmp.as<Data>();
+    if(tmp.is<std::vector<Data>>()) lef=tmp.as<std::vector<Data>>()[0];
     if(lef.isname()) lef=fetch(lef.name);
     //std::cout<<"term_lef="<<lef<<std::endl;
     for(int i=0;i<order.size();i++){
 
     //std::cout<<"term_rig="<<rig<<std::endl;
-      rig=visit(ctx->factor()[i+1]).as<Data>();
+      auto tmp1=visit(ctx->factor()[i+1]);
+      if(tmp1.is<Data>()) rig=tmp1.as<Data>();
+      if(tmp1.is<std::vector<Data>>()) rig=tmp1.as<std::vector<Data>>()[0];
       if(rig.isname()) rig=fetch(rig.name);
       switch (order[i].second){
         case 1: lef*=rig; break;
@@ -357,7 +363,10 @@ class EvalVisitor : public Python3BaseVisitor
     
     //std::cout<<"factor reached."<<std::endl;
     if(!ctx->atom_expr()) {
-      Data ret=visit(ctx->factor()).as<Data>();
+      auto tmp=visit(ctx->factor());
+      Data ret("None",true);
+      if(tmp.is<Data>()) ret=tmp.as<Data>();
+      if(tmp.is<std::vector<Data>>()) ret=tmp.as<std::vector<Data>>()[0];
       if(ret.isname()) ret=fetch(ret.name);
       if(ctx->ADD()) return ret;///wt
       if(ctx->MINUS()) return -ret;///wt
@@ -384,23 +393,31 @@ class EvalVisitor : public Python3BaseVisitor
       //std::cout<<"print called"<<std::endl;
       
       std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
+      //std::cout<<"arg set up."<<std::endl;
+      //std::cout<<"arg.size()-1="<<arg.size()-1<<std::endl;
       for (int i=0; i+1<arg.size(); i++) std::cout<<arg[i]<<' ';
-      if (arg.size()) std::cout<<arg[arg.size()-1];
+      //std::cout<<"arg[0,size-2] put."<<std::endl;
+      if (arg.size()) {
+        std::cout<<arg[arg.size()-1];}
+      //std::cout<<"arg[size-1] put."<<std::endl;
       std::cout<<std::endl;
       annih(dep+1);
+      //std::cout<<"annih executed."<<std::endl;
       return Data(true);
     }
     if(fpara.count(func_call)){
       //std::cout<<"func_call:"<<func_call<<std::endl;
       std::vector<Data> matchlist=visit(fpara[func_call]).as<std::vector<Data>>();
       //std::cout<<"matchlist set up. size="<<matchlist.size()<<std::endl;
+      
+      //std::cout<<"666:  "<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<std::endl;
       std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
       //std::cout<<"arg set up. size="<<arg.size()<<std::endl;
       int i=0,j=0; dep++;
       //for (auto jj:matchlist) std::cout<<"matchlist "<<jj.name<<' ';
       
-     // std::cout<<std::endl;
-     // for (auto jj:arg) std::cout<<"arg "<<jj.type<<' ';
+      //std::cout<<std::endl;
+      //for (auto jj:arg) std::cout<<"arg type "<<jj.type<<' ';
       //std::cout<<std::endl;
       while(i<matchlist.size()){
         //std::cout<<"i="<<i<<std::endl;
@@ -413,6 +430,7 @@ class EvalVisitor : public Python3BaseVisitor
       }
       //std::cout<<"matchlist worked."<<std::endl;
       //for (auto jj:matchlist) std::cout<<jj.name<<'='<<jj<<std::endl;
+      //std::cout<<"666:  "<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<std::endl;
       std::vector<Data> ret=visit(fcont[func_call]).as<std::vector<Data>>();
       annih(dep--);
       return ret;
@@ -420,7 +438,7 @@ class EvalVisitor : public Python3BaseVisitor
   }//内置函数已写好
 
   antlrcpp::Any visitTrailer(Python3Parser::TrailerContext *ctx){
-    //std::cout<<"trailer reached."<<std::endl;
+   // std::cout<<"trailer reached."<<std::endl;
     if(ctx->arglist()) return visit(ctx->arglist());
     std::vector<Data> ret;//无参数
     return ret;
@@ -486,6 +504,7 @@ class EvalVisitor : public Python3BaseVisitor
     if (!ctx->NAME()) return visit(ctx->test());
     //std::cout<<"argument IS NAME()"<<std::endl;
     std::string valname=ctx->NAME()->toString();
+    //std::cout<<"argument valname IS "<<valname<<std::endl;
     dict[dep+1][valname]=visit(ctx->test()).as<Data>();
     return Data(valname,true,true);
   }
