@@ -18,12 +18,13 @@ Data fetch(std::string name){
 }
 
 Data Data::get_value() const{
-  if (type) return *this;
+  if (type&&type!=6) return *this;
+  if (type==6) return Data("none",true);
   return fetch(name);
 }
 
 void annih(int depth){
-  dict[depth].erase(dict[depth].begin(),dict[depth].end());
+  if(!dict[depth].empty()) dict[depth].erase(dict[depth].begin(),dict[depth].end());
 }
 
 Data::operator bool() const{
@@ -141,7 +142,7 @@ class EvalVisitor : public Python3BaseVisitor
     if(ctx->testlist()) {
       auto ret=visit(ctx->testlist()).as<std::vector<Data>>();
       if(ret[0].type==5) return ret;
-      for(int i=0;i<ret.size();i++) ret[i]=ret[i].get_value();
+      for(int i=0;i<ret.size();i++) ret[i]=Data(ret[i].get_value());
       return ret;
     }
     std::vector<Data> ret;
@@ -315,7 +316,12 @@ class EvalVisitor : public Python3BaseVisitor
         return (data.*(func_conv[i]))();
       }
     if(func_call=="print"){ //  "print"   print()是允许的
-      std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
+      auto tmp0=visit(ctx->trailer());
+      if(tmp0.is<Data>()&&tmp0.as<Data>().type>=5) {
+        std::cout<<"None"<<std::endl;
+        return Data(true);
+      }
+      std::vector<Data> arg(tmp0.as<std::vector<Data>>());
       for (int i=0; i+1<arg.size(); i++) std::cout<<arg[i]<<' ';
       if (arg.size()) {
         std::cout<<arg[arg.size()-1];}
@@ -334,10 +340,12 @@ class EvalVisitor : public Python3BaseVisitor
         dep++, i++, j++;
       }
       std::vector<Data> ret;
-      auto atmp=visit(fcont[func_call]);
-      if(atmp.is<std::vector<Data>>())ret=atmp.as<std::vector<Data>>();
-        else ret.push_back(atmp.as<Data>());
-      annih(dep--);
+      antlrcpp::Any atmp=visit(fcont[func_call]);
+      if(atmp.is<std::vector<Data>>())
+        ret=atmp.as<std::vector<Data>>();
+        else ret.push_back(Data("None",true));
+      annih(dep);
+      dep--;
       return ret;
     }
   }//内置函数已写好
@@ -376,11 +384,11 @@ class EvalVisitor : public Python3BaseVisitor
   antlrcpp::Any visitTestlist(Python3Parser::TestlistContext *ctx){
     std::vector<Data> ret;
     for (int i=0; i<ctx->test().size(); i++) {
-      auto tmp=visit(ctx->test(i));
+      auto tmp=visit(ctx->test()[i]);
       if (tmp.is<std::vector<Data>>())
         for(int i=0;i<tmp.as<std::vector<Data>>().size();i++) ret.push_back(tmp.as<std::vector<Data>>()[i]);///return a,foo(b)
       else ret.push_back( tmp.as<Data>() );
-      }
+    }
     return ret;
   }//返回 vector<Data>
 
@@ -396,7 +404,11 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitArgument(Python3Parser::ArgumentContext *ctx){
-    if (!ctx->NAME()) return visit(ctx->test()).as<Data>().get_value();
+    if (!ctx->NAME()) {
+      auto tmp=visit(ctx->test());
+      if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>(); 
+      return tmp.as<Data>().get_value();
+    }
     std::string valname=ctx->NAME()->toString();
     dict[dep+1][valname]=visit(ctx->test()).as<Data>();
     return Data(valname,true,true);
