@@ -51,36 +51,27 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitFuncdef(Python3Parser::FuncdefContext *ctx){
-    //std::cout<<"funcdef reached."<<std::endl;
-    fpara[ctx->NAME()->toString()]=ctx->parameters();
-    fcont[ctx->NAME()->toString()]=ctx->suite();
-    
-    //std::cout<<"funcdef func saved."<<std::endl;
+    std::string nam=ctx->NAME()->toString();
+    fpara[nam]=ctx->parameters();
+    fcont[nam]=ctx->suite();
     return Data(true);
   }
 
   antlrcpp::Any visitParameters(Python3Parser::ParametersContext *ctx){
-    //std::cout<<"parameters reached."<<std::endl;
     if(ctx->typedargslist()) return visit(ctx->typedargslist());
     std::vector<Data> ret;
     return ret;
   }
 
   antlrcpp::Any visitTypedargslist(Python3Parser::TypedargslistContext *ctx){
-    //std::cout<<"typed arglist reached."<<std::endl;
     std::vector<Data> ret;
     for(int i=0; i<ctx->tfpdef().size()-ctx->test().size(); i++){
-      //std::cout<<"i="<<i<<"novalue"<<std::endl;
       std::string valname=ctx->tfpdef(i)->NAME()->toString();
       ret.push_back(Data(valname,true,true));
     }
     for(int i=ctx->tfpdef().size()-ctx->test().size(); i<ctx->tfpdef().size(); i++){
-      //std::cout<<"i="<<i<<std::endl;
-
       std::string valname=ctx->tfpdef(i)->NAME()->toString();
-      //std::cout<<"valname="<<valname<<std::endl;
       Data data=visit(ctx->test( i-(ctx->tfpdef().size()-ctx->test().size()) )).as<Data>();
-      //std::cout<<"tfpdef_test visited."<<std::endl;
       dict[dep+1][valname]=data;
       ret.push_back(Data(valname,true,true));
     }
@@ -106,21 +97,12 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx){
-    //std::cout<<"expr_stmt reached."<<std::endl;
+    if(ctx->testlist().size()==1) visitTestlist(ctx->testlist(0));
     if(ctx->augassign()) {
-      //std::cout<<"augassign"<<std::endl;
       Data lef=(visit(ctx->testlist(0)).as<std::vector<Data>>())[0],rig=(visit(ctx->testlist(1)).as<std::vector<Data>>())[0];
       std::string nam=lef.name;
-      //std::cout<<"expr_stmt_augassign got_lef:"<<lef<<std::endl;
-      
-      //std::cout<<"expr_stmt_augassign got_rig:"<<rig<<std::endl;
       lef=lef.get_value(), rig=rig.get_value();
-      
-      //std::cout<<"expr_stmt_augassign got_lef:"<<lef<<std::endl;
-      //std::cout<<"expr_stmt_augassign got_rig:"<<rig<<std::endl;
       (lef.*(func_augass[visit(ctx->augassign()).as<int>()])) (rig);
-      
-      //std::cout<<"expr_stmt_augassign got_lef:"<<lef<<std::endl;
       dict[dep][nam]=lef;
     }else{
       std::vector<Data> assi( visit(ctx->testlist(ctx->testlist().size()-1)).as<std::vector<Data>>() ); 
@@ -172,44 +154,30 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitIf_stmt(Python3Parser::If_stmtContext *ctx){
-  //std::cout<<"if reached."<<std::endl;
-  //std::cout<<"a,b "<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<std::endl;
-    for (int i=0; i<ctx->test().size(); i++)
-      if(bool(visit(ctx->test(i)).as<Data>())){
-        return visit(ctx->suite(i));
-      }
-    //std::cout<<"ahead to else"<<std::endl;
+    for (int i=0; i<ctx->test().size(); i++){
+      auto tmp=visit(ctx->test(i));
+      if(tmp.is<std::vector<Data>>()) tmp=tmp.as<std::vector<Data>>();
+      if(bool(tmp.as<Data>())) return visit(ctx->suite(i));
+    }
     if (ctx->ELSE()) return visit(ctx->suite(ctx->suite().size()-1));
     return Data(false);
   }
 
   antlrcpp::Any visitWhile_stmt(Python3Parser::While_stmtContext *ctx){
-    //std::cout<<"while_stmt reached."<<std::endl;
-   while (bool(visit(ctx->test()).as<Data>())){
-     //std::cout<<"while_test 已被判断"<<std::endl;
-     //std::cout<<"a="<<dict[dep]["a"]<<' '<<"b="<<dict[dep]["b"]<<" r="<<dict[dep]["r"]<<std::endl;
-     antlrcpp::Any tmp=visit(ctx->suite());
-     //std::cout<<"while_suite 已被访问"<<std::endl;
-    // std::cout<<"a="<<dict[dep]["a"]<<' '<<"b="<<dict[dep]["b"]<<" r="<<dict[dep]["r"]<<std::endl;
-     if (tmp.is<int>()&&tmp.as<int>()==111) return Data(true);
-   }
-   return Data(true);
+    while (1) {
+      antlrcpp::Any tmp1=visit(ctx->test());
+      if(tmp1.is<std::vector<Data>>()) tmp1=tmp1.as<std::vector<Data>>();
+      if(!bool(tmp1.as<Data>())) break;
+      antlrcpp::Any tmp2=visit(ctx->suite());
+      if (tmp2.is<int>()&&tmp2.as<int>()==111) return Data(true);
+    }
+    return Data(true);
   }
 
   antlrcpp::Any visitSuite(Python3Parser::SuiteContext *ctx){
-    //std::cout<<"suite reached."<<std::endl;
     if(ctx->simple_stmt()) return(ctx->simple_stmt());
-    //std::cout<<"suite: not simple_stmt"<<std::endl;
-    //std::cout<<"ctx->stmt().size()="<<ctx->stmt().size()<<std::endl;
     for(int i=0; i<ctx->stmt().size(); i++){
       auto tmp=visit(ctx->stmt(i));
-      //std::cout<<"visit stmt"<<i<<std::endl;
-      //std::cout<<"a,b,c="<<dict[dep]["a"]<<dict[dep]["b"]<<dict[dep]["c"]<<std::endl;
-      //std::cout<<"tmp is Data? "<<tmp.is<Data>()<<std::endl;
-      //if(tmp.is<Data>()) std::cout<<"Data.type is"<<tmp.as<Data>().type<<"Data is"<<tmp.as<Data>()<<std::endl;
-      //std::cout<<"tmp is int? "<<tmp.is<int>()<<std::endl;
-      //std::cout<<"tmp is vector? "<<tmp.is<std::vector<Data>>()<<std::endl;
-      //if(tmp.is<std::vector<Data>>()) std::cout<<"tmp[0]="<<tmp.as<std::vector<Data>>()[0]<<std::endl;
       if(tmp.is<int>())
         return (tmp.as<int>()==111?111:112);//111 for break; 112 for continue.
       if(tmp.is<Data>()&&tmp.as<Data>().type==5) {
@@ -217,8 +185,6 @@ class EvalVisitor : public Python3BaseVisitor
         ret00.push_back(Data("None",true));
         return ret00;
       }
-      //std::cout<<"suite_i="<<i<<std::endl;
-      //std::cout<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<' '<<dict[dep]["c"]<<std::endl;
       if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>();
     }
     std::vector<Data> ret00;
