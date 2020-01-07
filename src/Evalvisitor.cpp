@@ -44,6 +44,16 @@ std::ostream& operator<<(std::ostream& os,Data data){
   return os;
 }
 
+Data get_first(antlrcpp::Any tmp){
+  if(tmp.is<Data>()) return tmp.as<Data>();
+  if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>()[0];
+  exit(-1);
+}
+
+Data get_first_value(antlrcpp::Any tmp){
+  return get_first(tmp).get_value();
+}
+
 class EvalVisitor : public Python3BaseVisitor
 {
   antlrcpp::Any visitFile_input(Python3Parser::File_inputContext *ctx){
@@ -158,10 +168,11 @@ class EvalVisitor : public Python3BaseVisitor
 
   antlrcpp::Any visitIf_stmt(Python3Parser::If_stmtContext *ctx){
     for (int i=0; i<ctx->test().size(); i++){
-      auto tmp=visit(ctx->test(i));
-      if(tmp.is<std::vector<Data>>()) {
-        if (bool(tmp.as<std::vector<Data>>()[0])) return visit(ctx->suite(i));
-      }else if(bool(tmp.as<Data>())) return visit(ctx->suite(i));
+      if(bool(get_first_value(visit(ctx->test(i))))) return visit(ctx->suite(i));
+      //auto tmp=visit(ctx->test(i));
+      //if(tmp.is<std::vector<Data>>()) {
+      //  if (bool(tmp.as<std::vector<Data>>()[0])) return visit(ctx->suite(i));
+      //}else if(bool(tmp.as<Data>())) return visit(ctx->suite(i));
     }
     if (ctx->ELSE()) return visit(ctx->suite(ctx->suite().size()-1));
     return Data(false);
@@ -169,10 +180,11 @@ class EvalVisitor : public Python3BaseVisitor
 
   antlrcpp::Any visitWhile_stmt(Python3Parser::While_stmtContext *ctx){
     while (1) {
-      antlrcpp::Any tmp1=visit(ctx->test());
-      if(tmp1.is<std::vector<Data>>()){ 
-        if(!bool(tmp1.as<std::vector<Data>>()[0])) return Data(true);
-      }else if(!bool(tmp1.as<Data>())) return Data(true);
+      //antlrcpp::Any tmp1=visit(ctx->test());
+      //if(tmp1.is<std::vector<Data>>()){ 
+      //  if(!bool(tmp1.as<std::vector<Data>>()[0])) return Data(true);
+      //}else if(!bool(tmp1.as<Data>())) return Data(true);
+      if(bool(get_first_value(visit(ctx->test())))) return Data(true);
       antlrcpp::Any tmp2=visit(ctx->suite());
       if (tmp2.is<int>()&&tmp2.as<int>()==111) return Data(true);
     }
@@ -227,9 +239,9 @@ class EvalVisitor : public Python3BaseVisitor
 
   antlrcpp::Any visitComparison(Python3Parser::ComparisonContext *ctx){
     if(!ctx->comp_op().size()) return visit(ctx->arith_expr(0));
-    Data lef=visit(ctx->arith_expr(0)).as<Data>().get_value();
+    Data lef=get_first_value(visit(ctx->arith_expr(0)));
     for(int i=0;i<ctx->comp_op().size();i++){
-      Data rig=visit(ctx->arith_expr(i+1)).as<Data>().get_value();
+      Data rig=get_first_value(visit(ctx->arith_expr(i+1)));
       if(! ((lef.*( func_comp_op [visit(ctx->comp_op(i)).as<int>()] )) (rig)) ) return Data(false);
       lef=rig;
     }
