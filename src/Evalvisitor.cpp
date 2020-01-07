@@ -97,7 +97,6 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx){
-    if(ctx->testlist().size()==1) visitTestlist(ctx->testlist(0));
     if(ctx->augassign()) {
       Data lef=(visit(ctx->testlist(0)).as<std::vector<Data>>())[0],rig=(visit(ctx->testlist(1)).as<std::vector<Data>>())[0];
       std::string nam=lef.name;
