@@ -34,7 +34,7 @@ std::ostream& operator<<(std::ostream& os,Data data){
   if (!data.type) data=fetch(data.name);
   switch (data.type){
     case 1: os<<data.num; break;
-    case 2: os<<data.d; break;
+    case 2: printf("%.6f",data.d); break;
     case 3: os<<data.s; break;
     case 4: os<<(data.b?"True":"False"); break;
     case 5: os<<"None"; 
