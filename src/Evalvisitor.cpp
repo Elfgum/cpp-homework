@@ -162,9 +162,7 @@ class EvalVisitor : public Python3BaseVisitor
       for(int i=0;i<ret.size();i++) ret[i]=ret[i].get_value();
       return ret;
     }
-    std::vector<Data> ret0;
-    ret0.push_back(Data("None",true));
-    return ret0;
+    return Data("None",true);
   }
 
   antlrcpp::Any visitCompound_stmt(Python3Parser::Compound_stmtContext *ctx){
@@ -214,14 +212,18 @@ class EvalVisitor : public Python3BaseVisitor
       //if(tmp.is<std::vector<Data>>()) std::cout<<"tmp[0]="<<tmp.as<std::vector<Data>>()[0]<<std::endl;
       if(tmp.is<int>())
         return (tmp.as<int>()==111?111:112);//111 for break; 112 for continue.
-      if(tmp.is<Data>()&&tmp.as<Data>().type==5) return Data("None",true);
+      if(tmp.is<Data>()&&tmp.as<Data>().type==5) {
+        std::vector<Data> ret00;
+        ret00.push_back(Data("None",true));
+        return ret00;
+      }
       //std::cout<<"suite_i="<<i<<std::endl;
       //std::cout<<dict[dep]["a"]<<' '<<dict[dep]["b"]<<' '<<dict[dep]["c"]<<std::endl;
       if(tmp.is<std::vector<Data>>()) return tmp.as<std::vector<Data>>();
     }
-    std::vector<Data> ret0;
-    ret0.push_back(Data("None",true));
-    return ret0;
+    std::vector<Data> ret00;
+    ret00.push_back(Data("None",true));
+    return ret00;
   }
 
   antlrcpp::Any visitTest(Python3Parser::TestContext *ctx) {
