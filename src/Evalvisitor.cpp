@@ -421,7 +421,7 @@ class EvalVisitor : public Python3BaseVisitor
       return tmp.as<Data>().get_value();
     }
     std::string valname=ctx->NAME()->toString();
-    dict[dep+1][valname]=visit(ctx->test()).as<Data>();
+    dict[dep+1][valname]=get_first(visit(ctx->test()));
     return Data(valname,true,true);
   }
 };
