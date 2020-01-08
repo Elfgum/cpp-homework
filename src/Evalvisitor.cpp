@@ -191,7 +191,7 @@ class EvalVisitor : public Python3BaseVisitor
   }
 
   antlrcpp::Any visitSuite(Python3Parser::SuiteContext *ctx){
-    if(ctx->simple_stmt()) return(ctx->simple_stmt());
+    if(ctx->simple_stmt()) return visit(ctx->simple_stmt());
     for(int i=0; i<ctx->stmt().size(); i++){
       auto tmp=visit(ctx->stmt(i));
       if(tmp.is<int>())
@@ -321,7 +321,6 @@ class EvalVisitor : public Python3BaseVisitor
     std::string func_call=ctx->atom()->NAME()->toString();
     for(int i=0; i<4; i++) 
       if (func_call==built_in_func[i]) {
-        
         std::vector<Data> arg(visit(ctx->trailer()).as<std::vector<Data>>());
         Data data=arg[0].get_value();
         annih(dep+1);
